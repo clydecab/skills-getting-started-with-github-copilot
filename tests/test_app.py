@@ -16,3 +16,17 @@ def test_unregister_participant_removes_email_from_activity():
     activities = client.get("/activities").json()
     assert "michael@mergington.edu" not in activities["Chess Club"]["participants"]
     assert "daniel@mergington.edu" in activities["Chess Club"]["participants"]
+
+
+def test_signup_rejects_when_activity_is_full():
+    client = TestClient(app_module.app)
+    activity = app_module.activities["Chess Club"]
+    activity["participants"] = [f"student{i}@mergington.edu" for i in range(activity["max_participants"])]
+
+    response = client.post(
+        "/activities/Chess%20Club/signup",
+        params={"email": "overflow@mergington.edu"},
+    )
+
+    assert response.status_code == 400
+    assert "full" in response.json()["detail"].lower()
